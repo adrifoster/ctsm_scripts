@@ -1,0 +1,67 @@
+#!/usr/bin/bash 
+#
+
+#
+# #########################
+# Purpose: Parse a configuration file for creating and building CTSM cases
+# Author: Adrianna C. Foster
+# Date: August, 2021
+# bash version 
+# #########################
+# #########################
+# Input format: text file
+# #########################
+# #########################
+# Notes: If you want to add more parameters, you must add it to the config
+#        array and the variable list at the bottom of the file.
+
+## Config file name
+conf=$1
+
+## Set up the array
+## Add more parameters here
+typeset -A config
+config=(
+    [MACH]=""
+    [PROJECT]=""
+    [SRCDIR]=""
+    [TAG]=""
+    [PARAM_FILE]=""
+    [PARAM_DIR]=""
+    [CASE_DIR]=""
+    [COMP]=""
+    [RES]=""
+    [STOPN]=""
+    [STARTDATE]=""
+    [STOPVAL]=""
+    [DATMSTARTYR]=""
+    [DATMSTOPYR]=""
+)
+
+## Parse config file
+while read line
+do
+    if echo $line | grep -F = &>/dev/null
+    then
+        varname=$(echo "$line" | cut -d '=' -f 1)
+        config[$varname]=$(echo "$line" | cut -d '=' -f 2-)
+    fi
+done < $conf
+
+## Create variables - add more parameters here
+MACH=${config[MACH]}
+PROJECT=${config[PROJECT]}
+SRCDIR=${config[SRCDIR]}
+TAG=${config[TAG]}
+PARAM_FILE=${config[PARAM_FILE]}
+PARAM_DIR=${config[PARAM_DIR]}
+CASE_DIR=${config[CASE_DIR]}
+COMP=${config[COMP]}
+RES=${config[RES]}
+STOPN=${config[STOPN]}
+STARTDATE=${config[STARTDATE]}
+STOPVAL=${config[STOPVAL]}
+DATMSTARTYR=${config[DATMSTARTYR]}
+DATMSTOPYR=${config[DATMSTOPYR]}
+
+
