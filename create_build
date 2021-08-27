@@ -6,7 +6,7 @@
 # Purpose: Create and build a case for CTSM runs
 # Author: Adrianna C. Foster
 # Date: August, 2021
-# bash version
+# bash version 4.2.46
 # #########################
 # #########################
 # Input format: text file

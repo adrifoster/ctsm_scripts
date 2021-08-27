@@ -1,4 +1,4 @@
-#!/usr/bin/bash 
+#!/usr/bin/bash
 #
 
 #
@@ -6,7 +6,7 @@
 # Purpose: Parse a configuration file for creating and building CTSM cases
 # Author: Adrianna C. Foster
 # Date: August, 2021
-# bash version 
+# bash version 4.2.46
 # #########################
 # #########################
 # Input format: text file
@@ -63,5 +63,3 @@ STARTDATE=${config[STARTDATE]}
 STOPVAL=${config[STOPVAL]}
 DATMSTARTYR=${config[DATMSTARTYR]}
 DATMSTOPYR=${config[DATMSTOPYR]}
-
-
