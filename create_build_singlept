@@ -16,18 +16,47 @@
 #        This also assumes you have already subset the correct surface, domain,
 #        and datm files. See subset_data.py script.
 
+## Parameters ------------------------------------------------------------------
+# CONF              - config file name             (argument for script)
+# MACH              - machine (izumi/cheyenne)     (in config file)
+# PROJECT           - project code                 (in config file)
+# SRCDIR            - CTSM source code directory   (in config file)
+# TAG               - name of case                 (in config file)
+# SITE              - site name                    (in config file)
+# FATES             - use fates or not             (in config file)
+# PARAM_FILE        - FATES parameter file         (in config file)
+# PARAM_DIR         - FATES param file location    (in config file)
+# CASE_DIR          - case directory path          (in config file)
+# COMP              - compset for run              (in config file)
+# RES               - resolution of run            (in config file)
+# STOPN             - how long to run              (in config file)
+# RESUBN            - times to resubmit run        (in config file)
+# STOPVAL           - units for STOPN              (in config file)
+# RESTVAL           - units for RESUBN             (in config file)
+# STATDATE          - start date for run           (in config file)
+# DATMSTARTYR       - start year to loop datm over (in config file)
+# DATMSTOPYR        - end year to loop datm over   (in config file)
+# DATMMODE          - mode for data atm. component (in config file)
+# CLM_USRDAT_DOMAIN - subset domain file           (in config file)
+# CLM_DOMAIN_DIR    - subset domain location       (in config file)
+# CLM_SURFDAT_DIR   - subset surface data location (in config file)
+# CLM_USRDAT_SURDAT - subset surface data file     (in config file)
+# USER_DATM_DIR     - location of datm.streams*    (in config file)
+# WALL_TIME         - wallclock time               (in config file)
+
+
 ## Config file name
-conf=$1
+CONF=$1
 
 ## Parse the config file to get parameters
-source config_parse ${conf}
+source config_parse ${CONF}
 
 ## Get CTSM git version - this will go into case name
 cd ${SRCDIR}
 githashctsm=`git log -n 1 --format=%h`
 
 ## Get the FATES git version if running fates - this will also go into case name
-if [${FATES}]
+if [${FATES} == 1]
 then
   cd src/fates
   githashfates=`git log -n 1 --format=%h`
@@ -73,10 +102,11 @@ cd ${case_name}
 ./xmlchange --id STOP_N --val ${STOPN}
 ./xmlchange --id RUN_STARTDATE --val "'$STARTDATE'"
 ./xmlchange --id STOP_OPTION --val ${STOPVAL}
-./xmlchange --id REST_OPTION --val ${RESTN}
+./xmlchange --id REST_OPTION --val ${RESTVAL}
 ./xmlchange --id RESUBMIT --val ${RESUBN}
 ./xmlchange --id CLM_FORCE_COLDSTART --val on
 ./xmlchange --id JOB_WALLCLOCK_TIME --val ${WALL_TIME}
+./xmlchange --id DATM_CLMNCEP_YR_ALIGN --val ${DATMSTARTYR}
 ./xmlchange --id DATM_CLMNCEP_YR_START --val ${DATMSTARTYR}
 ./xmlchange --id DATM_CLMNCEP_YR_END --val ${DATMSTOPYR}
 ./xmlchange --id DATM_MODE --val ${DATMMODE}
@@ -102,7 +132,7 @@ EOF
 ## Update the user_nl_clm file
 ## the fsurdat is used for updating the surface dataset file for
 ## singlepoint runs
-if [${FATES}]
+if [${FATES} == 1]
 then
   cat > user_nl_clm <<EOF
   fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'

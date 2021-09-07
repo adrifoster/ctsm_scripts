@@ -15,6 +15,33 @@
 # Notes: If you want to add more parameters, you must add it to the config
 #        array and the variable list at the bottom of the file.
 
+## Parameters set here ---------------------------------------------------------
+# MACH              - machine (izumi/cheyenne)
+# PROJECT           - project code
+# SRCDIR            - CTSM source code directory
+# TAG               - name of case
+# SITE              - site name
+# FATES             - use fates or not
+# PARAM_FILE        - FATES parameter file
+# PARAM_DIR         - FATES param file location
+# CASE_DIR          - case directory path
+# COMP              - compset for run
+# RES               - resolution of run
+# STOPN             - how long to run
+# RESUBN            - times to resubmit run
+# STOPVAL           - units for STOPN
+# RESTVAL           - units for RESUBN
+# STATDATE          - start date for run
+# DATMSTARTYR       - start year to loop datm over
+# DATMSTOPYR        - end year to loop datm over
+# DATMMODE          - mode for data atm. component
+# CLM_USRDAT_DOMAIN - subset domain file
+# CLM_DOMAIN_DIR    - subset domain location
+# CLM_SURFDAT_DIR   - subset surface data location
+# CLM_USRDAT_SURDAT - subset surface data file
+# USER_DATM_DIR     - location of datm.streams*
+# WALL_TIME         - wallclock time
+
 ## Config file name
 conf=$1
 
@@ -34,12 +61,19 @@ config=(
     [COMP]=""
     [RES]=""
     [STOPN]=""
-    [RESTN]=""
     [RESUBN]=""
-    [STARTDATE]=""
     [STOPVAL]=""
+    [RESTVAL]=""
+    [STARTDATE]=""
     [DATMSTARTYR]=""
     [DATMSTOPYR]=""
+    [DATMMODE]=""
+    [CLM_USRDAT_DOMAIN]=""
+    [CLM_DOMAIN_DIR]=""
+    [CLM_SURFDAT_DIR]=""
+    [CLM_USRDAT_SURDAT]=""
+    [USER_DATM_DIR]=""
+    [WALL_TIME]=""
 )
 
 ## Parse config file
@@ -56,8 +90,8 @@ done < $conf
 MACH=${config[MACH]}
 PROJECT=${config[PROJECT]}
 SRCDIR=${config[SRCDIR]}
-SITE=${config[SITE]}
 TAG=${config[TAG]}
+SITE=${config[SITE]}
 FATES=${config[FATES]}
 PARAM_FILE=${config[PARAM_FILE]}
 PARAM_DIR=${config[PARAM_DIR]}
@@ -65,9 +99,16 @@ CASE_DIR=${config[CASE_DIR]}
 COMP=${config[COMP]}
 RES=${config[RES]}
 STOPN=${config[STOPN]}
-RESTN=${config[RESTN]}
 RESUBN=${config[RESUBN]}
-STARTDATE=${config[STARTDATE]}
 STOPVAL=${config[STOPVAL]}
+RESTVAL=${config[RESTVAL]}
+STARTDATE=${config[STARTDATE]}
 DATMSTARTYR=${config[DATMSTARTYR]}
 DATMSTOPYR=${config[DATMSTOPYR]}
+DATMMODE=${config[DATMMODE]}
+CLM_USRDAT_DOMAIN=${config[CLM_USRDAT_DOMAIN]}
+CLM_DOMAIN_DIR=${config[CLM_DOMAIN_DIR]}
+CLM_SURFDAT_DIR=${config[CLM_SURFDAT_DIR]}
+CLM_USRDAT_SURDAT=${config[CLM_USRDAT_SURDAT]}
+USER_DATM_DIR=${config[USER_DATM_DIR]}
+WALL_TIME=${config[WALL_TIME]}
