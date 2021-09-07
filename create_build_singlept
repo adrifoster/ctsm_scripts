@@ -56,7 +56,7 @@ cd ${SRCDIR}
 githashctsm=`git log -n 1 --format=%h`
 
 ## Get the FATES git version if running fates - this will also go into case name
-if [${FATES} == 1]
+if ["$FATES" == "1"]
 then
   cd src/fates
   githashfates=`git log -n 1 --format=%h`
@@ -72,7 +72,7 @@ fi
 base_dir=${SRCDIR}/cime/scripts
 
 ## Create the case
-cd ${basedir}
+cd ${base_dir}
 ./create_newcase --case ${case_name} --res ${RES} --compset ${COMP} --project ${PROJECT} --run-unsupported --mach ${MACH}
 
 cd ${case_name}
@@ -100,7 +100,7 @@ cd ${case_name}
 ## Note for variables that require quotes you must use the double then single
 ## quotes approach for it to work.
 ./xmlchange --id STOP_N --val ${STOPN}
-./xmlchange --id RUN_STARTDATE --val "'$STARTDATE'"
+./xmlchange --id RUN_STARTDATE --val $STARTDATE
 ./xmlchange --id STOP_OPTION --val ${STOPVAL}
 ./xmlchange --id REST_OPTION --val ${RESTVAL}
 ./xmlchange --id RESUBMIT --val ${RESUBN}
@@ -118,7 +118,7 @@ cd ${case_name}
 ./xmlchange --id MOSART_MODE --val NULL
 
 ## Need jobqueue for running on izumi
-if ["${MACH}" == 'izumi']
+if ["$MACH" == "izumi"]
 then
   ./xmlchange --id JOB_QUEUE --val verylong
 fi
@@ -132,31 +132,32 @@ EOF
 ## Update the user_nl_clm file
 ## the fsurdat is used for updating the surface dataset file for
 ## singlepoint runs
-if [${FATES} == 1]
+
+if ["$FATES" == "1"]
 then
-  cat > user_nl_clm <<EOF
-  fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
-  fates_paramfile = '${PARAM_DIR}${PARAM_FILE}'
-  hist_fincl1 =
-  'M1_SCPF','M2_SCPF','M3_SCPF','M4_SCPF','M5_SCPF','M6_SCPF','M7_SCPF','M8_SCPF','M9_SCPF',\
-  'CROWNSCORCHMORT_SCPF','CAMBIALFIREMORT_SCPF',\
-  'MORTALITY_CANOPY_SCPF','MORTALITY_UNDERSTORY_SCPF','Fire_Closs',\
-  'PATCH_AREA_BY_AGE','CANOPY_AREA_BY_AGE','BIOMASS_BY_AGE','PFTcrownarea',\
-  'DDBH_CANOPY_SCPF','DDBH_UNDERSTORY_SCPF','NPLANT_CANOPY_SCPF','NPLANT_UNDERSTORY_SCPF',\
-  'BSTOR_CANOPY_SCPF','BSTOR_UNDERSTORY_SCPF','CWD_AG_CWDSC',\
-  'NPLANT_SCAG','NPLANT_SCAGPFT','NPLANT_SCPF','DDBH_SCPF','BA_SCPF','RECRUITMENT'
 
-  use_fates=.true.
-  fates_parteh_mode=1
-  fates_spitfire_mode=0
+cat > user_nl_clm <<EOF
+fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+fates_paramfile = '${PARAM_DIR}${PARAM_FILE}'
+hist_fincl1 =
+'M1_SCPF','M2_SCPF','M3_SCPF','M4_SCPF','M5_SCPF','M6_SCPF','M7_SCPF','M8_SCPF','M9_SCPF',\
+'CROWNSCORCHMORT_SCPF','CAMBIALFIREMORT_SCPF',\
+'MORTALITY_CANOPY_SCPF','MORTALITY_UNDERSTORY_SCPF','Fire_Closs',\
+'PATCH_AREA_BY_AGE','CANOPY_AREA_BY_AGE','BIOMASS_BY_AGE','PFTcrownarea',\
+'DDBH_CANOPY_SCPF','DDBH_UNDERSTORY_SCPF','NPLANT_CANOPY_SCPF','NPLANT_UNDERSTORY_SCPF',\
+'BSTOR_CANOPY_SCPF','BSTOR_UNDERSTORY_SCPF','CWD_AG_CWDSC',\
+'NPLANT_SCAG','NPLANT_SCAGPFT','NPLANT_SCPF','DDBH_SCPF','BA_SCPF','RECRUITMENT'
 
-  EOF
+use_fates=.true.
+fates_parteh_mode=1
+fates_spitfire_mode=0
+EOF
 
 else
-  cat > user_nl_clm <<EOF
-  fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+cat > user_nl_clm <<EOF
+fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+EOF
 
-  EOF
 fi
 
 ## Copy the user_datm.streams* files
