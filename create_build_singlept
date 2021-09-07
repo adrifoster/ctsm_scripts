@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+#
+# #########################
+# Purpose: Create and build a single-point case for CTSM runs
+# Author: Adrianna C. Foster
+# Date: September, 2021
+# bash version 4.2.46
+# #########################
+# #########################
+# Input format: text file
+# #########################
+# #########################
+# Notes: Makes use of the config_parse script. If you want to add more
+#        parameters, see the notes for that script.
+#        This also assumes you have already subset the correct surface, domain,
+#        and datm files. See subset_data.py script.
+
+## Config file name
+conf=$1
+
+## Parse the config file to get parameters
+source config_parse ${conf}
+
+## Get CTSM git version - this will go into case name
+cd ${SRCDIR}
+githashctsm=`git log -n 1 --format=%h`
+
+## Get the FATES git version if running fates - this will also go into case name
+if [${FATES}]
+then
+  cd src/fates
+  githashfates=`git log -n 1 --format=%h`
+
+  ## Create case name with ctsm and fates githash
+  case_name=${CASE_DIR}/${TAG}_${githashctsm}_${githashfates}
+else
+  ## Create case name with just ctsm githash
+  case_name=${CASE_DIR}/${TAG}_${githashctsm}
+fi
+
+## Define CIME directory
+base_dir=${SRCDIR}/cime/scripts
+
+## Create the case
+cd ${basedir}
+./create_newcase --case ${case_name} --res ${RES} --compset ${COMP} --project ${PROJECT} --run-unsupported --mach ${MACH}
+
+cd ${case_name}
+
+## Modify env_mach_pes file
+## Increase to 8 nodes
+./xmlchange NTASKS_ATM=1
+./xmlchange NTASKS_CPL=1
+./xmlchange NTASKS_GLC=1
+./xmlchange NTASKS_OCN=1
+./xmlchange NTASKS_WAV=1
+./xmlchange NTASKS_ICE=1
+./xmlchange NTASKS_LND=1
+./xmlchange NTASKS_ROF=1
+./xmlchange NTASKS_ESP=1
+
+## Must do this for single-point runs
+./xmlchange MPILIB=mpi-serial
+
+## Run case-setup
+./case.setup
+
+## Modify env_run parameters - can add more parameters using the config_parse
+## script
+## Note for variables that require quotes you must use the double then single
+## quotes approach for it to work.
+./xmlchange --id STOP_N --val ${STOPN}
+./xmlchange --id RUN_STARTDATE --val "'$STARTDATE'"
+./xmlchange --id STOP_OPTION --val ${STOPVAL}
+./xmlchange --id REST_OPTION --val ${RESTN}
+./xmlchange --id RESUBMIT --val ${RESUBN}
+./xmlchange --id CLM_FORCE_COLDSTART --val on
+./xmlchange --id JOB_WALLCLOCK_TIME --val ${WALL_TIME}
+./xmlchange --id DATM_CLMNCEP_YR_START --val ${DATMSTARTYR}
+./xmlchange --id DATM_CLMNCEP_YR_END --val ${DATMSTOPYR}
+./xmlchange --id DATM_MODE --val ${DATMMODE}
+./xmlchange --id ATM_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
+./xmlchange --id ATM_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
+./xmlchange --id LND_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
+./xmlchange --id LND_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
+./xmlchange --id CLM_USRDAT_NAME --val ${SITE}
+./xmlchange --id MOSART_MODE --val NULL
+
+## Need jobqueue for running on izumi
+if ["${MACH}" == 'izumi']
+then
+  ./xmlchange --id JOB_QUEUE --val verylong
+fi
+
+
+## Update the user_nl_datm file
+cat > user_nl_datm <<EOF
+mapalgo = 'nn','nn','nn','nn','nn'
+EOF
+
+## Update the user_nl_clm file
+## the fsurdat is used for updating the surface dataset file for
+## singlepoint runs
+if [${FATES}]
+then
+  cat > user_nl_clm <<EOF
+  fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+  fates_paramfile = '${PARAM_DIR}${PARAM_FILE}'
+  hist_fincl1 =
+  'M1_SCPF','M2_SCPF','M3_SCPF','M4_SCPF','M5_SCPF','M6_SCPF','M7_SCPF','M8_SCPF','M9_SCPF',\
+  'CROWNSCORCHMORT_SCPF','CAMBIALFIREMORT_SCPF',\
+  'MORTALITY_CANOPY_SCPF','MORTALITY_UNDERSTORY_SCPF','Fire_Closs',\
+  'PATCH_AREA_BY_AGE','CANOPY_AREA_BY_AGE','BIOMASS_BY_AGE','PFTcrownarea',\
+  'DDBH_CANOPY_SCPF','DDBH_UNDERSTORY_SCPF','NPLANT_CANOPY_SCPF','NPLANT_UNDERSTORY_SCPF',\
+  'BSTOR_CANOPY_SCPF','BSTOR_UNDERSTORY_SCPF','CWD_AG_CWDSC',\
+  'NPLANT_SCAG','NPLANT_SCAGPFT','NPLANT_SCPF','DDBH_SCPF','BA_SCPF','RECRUITMENT'
+
+  use_fates=.true.
+  fates_parteh_mode=1
+  fates_spitfire_mode=0
+
+  EOF
+
+else
+  cat > user_nl_clm <<EOF
+  fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+
+  EOF
+fi
+
+## Copy the user_datm.streams* files
+cp ${USER_DATM_DIR}/user_datm* .
+
+
+## Build the case
+##./case.build
