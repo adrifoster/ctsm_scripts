@@ -3,8 +3,10 @@ import os
 import pandas as pd
 
 def modify_fates_params(file_work, tag, src_dir, param_file):
+    
+    # File name of final nc file
     today = str(date.today())
-    mod_fname = file_work + '/param_file_' + tag + '_' + today + '.nc'
+    mod_fname = file_work + '/param_file_' + tag + '.nc'
 
     # Create a string of the pfts we want
     pfts = param_file.pft_index.values
@@ -28,16 +30,14 @@ def modify_fates_params(file_work, tag, src_dir, param_file):
     for i in range(len(vars)):
         vals = param_file[vars[i]].values
         for j in range(len(vals)):
-            change_value(src_dir, mod_fname, str(vars[i]), str(vals[j]), str(i + 1))
+            change_value(src_dir, mod_fname, str(vars[i]), str(vals[j]), str(j + 1))
 
 
-    command = src_dir + '/tools_modify_fates_paramfile.py --fin ' + mod_fname + ' --fout ' + mod_fname + ' --O --var fates_mort_disturb_frac --val 0.5'
-    print(command)
-    #os.system(command)
+    command = src_dir + '/tools/modify_fates_paramfile.py --fin ' + mod_fname + ' --fout ' + mod_fname + ' --O --var fates_mort_disturb_frac --val 0.5'
+    os.system(command)
 
     command = 'rm ' + file_work + '/param_file_' + tag + '_temp0.nc'
-    print(command)
-    #os.system(command)
+    os.system(command)
 
 def change_value(src_dir, mod_fname, var, val, pft):
 
@@ -45,46 +45,44 @@ def change_value(src_dir, mod_fname, var, val, pft):
     files = ' --fin ' + mod_fname + ' --fout ' + mod_fname + ' --O '
 
     command = script + files + ' --PFT ' + pft + ' --var ' + var + ' --val ' + val
-    print(command)
-    #os.system(command)
+
+    os.system(command)
 
 
 def nc_generate(file_work, tag, src_dir, pft_list, mod_fname):
 
 
     init_file = file_work + '/param_file_' + tag + '_temp0.nc'
-    default_file = src_dir + '/parameter_files/fates_param_default.cdl'
+    default_file = src_dir + '/parameter_files/fates_params_default.cdl'
 
     # generate netcdf binary from the cdl file
     command = 'ncgen -o ' + init_file + ' ' + default_file
-    # os.system(command)
-    print(command)
-
+    os.system(command)
+ 
     # pull out pfts of interest (needle leaf evergreen: 2; broadleaf decid tree: 6)
-    command = src_dir + '/tools/FATESPFTIndexSwapper.py --fin ' + init_file + ' --fout ' + mod_fname + \
+    command = src_dir + '/tools/FatesPFTIndexSwapper.py --fin ' + init_file + ' --fout ' + mod_fname + \
               " --pft-indices " + pft_list
-    # os.system(command)
-    print(command)
-
+    os.system(command)
+    
 def rename_pfts(src_dir, mod_fname, param_file):
 
     pft_names = param_file.pft_name.values
 
     for i in range(len(pft_names)):
         command = src_dir + '/tools/modify_fates_paramfile.py --fin ' + mod_fname + ' --fout ' + mod_fname + \
-            '--O --var fates_pftname --val ' + str(pft_names[i]) + ' --PFT ' + str(i + 1)
-
-        print(command)
-        #os.system(command)
+            ' --O --var fates_pftname --val ' + str(pft_names[i]) + ' --PFT ' + str(i + 1)
+        
+        os.system(command)
 
 
 if __name__ == "__main__":
-    src_dir = 'src'
-    file_work = 'parameter_files'
+    src_dir = '/project/tss/afoster/ctsm_fates/src/fates'
+    file_work = '/project/tss/afoster/parameter_files'
     tag = 'canada'
-    param_file = pd.read_csv("fates_boreal_parameters.csv")
-
+    infile = '/home/afoster/fates_boreal_parameters.csv'
+    
     # Generate the new parameter file
+    param_file = pd.read_csv(infile)
     modify_fates_params(file_work, tag, src_dir, param_file)
 
 
