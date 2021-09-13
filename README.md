@@ -31,7 +31,7 @@ creates, sets up, and builds a single-point case based on an input config file -
  
 ## modify_param.py
 
-creates and modifies a default FATES parameter file based on an input csv file with PFTs, parameters to change, and their values. The csv file should have the first column be the FATES PFT index, the second column be the name of the PFT, and then the following columns should have the FATES parameter as the header (matching the FATES parameter file), with values in the cells below it:
+creates and modifies a default FATES parameter file based on an input csv file. The csv file should have the first column be the FATES PFT index, the second column be the name of the PFT, and then the following columns should have the FATES parameter as the header (matching the FATES parameter file), with values in the cells below it:
 
 | pft_index       | pft_name        | fates_woody     | fates_alloc_storage_cushion |
 | --------------- | --------------- | --------------- |  -------------------------- |
