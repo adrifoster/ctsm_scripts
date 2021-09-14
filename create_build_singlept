@@ -56,7 +56,7 @@ cd ${SRCDIR}
 githashctsm=`git log -n 1 --format=%h`
 
 ## Get the FATES git version if running fates - this will also go into case name
-if ["$FATES" == "1"]
+if [[ "$FATES" == "1" ]]
 then
   cd src/fates
   githashfates=`git log -n 1 --format=%h`
@@ -118,7 +118,7 @@ cd ${case_name}
 ./xmlchange --id MOSART_MODE --val NULL
 
 ## Need jobqueue for running on izumi
-if ["$MACH" == "izumi"]
+if [[ "$MACH" == "izumi" ]]
 then
   ./xmlchange --id JOB_QUEUE --val verylong
 fi
@@ -133,12 +133,12 @@ EOF
 ## the fsurdat is used for updating the surface dataset file for
 ## singlepoint runs
 
-if ["$FATES" == "1"]
+if [[ "$FATES" == "1" ]]
 then
 
 cat > user_nl_clm <<EOF
 fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
-fates_paramfile = '${PARAM_DIR}${PARAM_FILE}'
+fates_paramfile = '${PARAM_DIR}/${PARAM_FILE}'
 hist_fincl1 =
 'M1_SCPF','M2_SCPF','M3_SCPF','M4_SCPF','M5_SCPF','M6_SCPF','M7_SCPF','M8_SCPF','M9_SCPF',\
 'CROWNSCORCHMORT_SCPF','CAMBIALFIREMORT_SCPF',\
@@ -166,3 +166,4 @@ cp ${USER_DATM_DIR}/user_datm* .
 
 ## Build the case
 ##./case.build
+
