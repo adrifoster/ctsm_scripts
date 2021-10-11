@@ -77,9 +77,9 @@ def rename_pfts(src_dir, mod_fname, param_file):
 
 if __name__ == "__main__":
     src_dir = '/project/tss/afoster/ctsm_fates/src/fates'
-    file_work = '/project/tss/afoster/parameter_files'
+    file_work = '/project/tss/afoster/FATES_params'
     tag = 'canada'
-    infile = '/home/afoster/fates_boreal_parameters.csv'
+    infile = '/project/tss/afoster/FATES_params/fates_yukon_parameters.csv'
     
     # Generate the new parameter file
     param_file = pd.read_csv(infile)

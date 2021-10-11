@@ -41,7 +41,6 @@
 # CLM_DOMAIN_DIR    - subset domain location       (in config file)
 # CLM_SURFDAT_DIR   - subset surface data location (in config file)
 # CLM_USRDAT_SURDAT - subset surface data file     (in config file)
-# USER_DATM_DIR     - location of datm.streams*    (in config file)
 # WALL_TIME         - wallclock time               (in config file)
 
 
@@ -177,9 +176,6 @@ EOF
 
 fi
 
-## Copy the user_datm.streams* files
-cp ${USER_DATM_DIR}/user_datm* .
-
 
 ## Build the case
-./case.build
+##./case.build
