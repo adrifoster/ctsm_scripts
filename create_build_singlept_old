@@ -1,0 +1,284 @@
+#!/usr/bin/env bash
+
+#
+# #########################
+# Purpose: Create and build a single-point case for CTSM runs
+# Author: Adrianna C. Foster
+# Date: September, 2021
+# bash version 4.2.46
+# #########################
+# #########################
+# Input format: text file
+# #########################
+# #########################
+# Notes: Makes use of the config_parse script. If you want to add more
+#        parameters, see the notes for that script.
+#        This also assumes you have already subset the correct surface, domain,
+#        and datm files. See subset_data.py script.
+
+## Parameters ------------------------------------------------------------------
+# CONF              - config file name             (argument for script)
+# MACH              - machine (izumi/cheyenne)     (in config file)
+# PROJECT           - project code                 (in config file)
+# SRCDIR            - CTSM source code directory   (in config file)
+# TAG               - name of case                 (in config file)
+# SITE              - site name                    (in config file)
+# FATES             - use fates or not             (in config file)
+# PARAM_FILE        - FATES parameter file         (in config file)
+# PARAM_DIR         - FATES param file location    (in config file)
+# CASE_DIR          - case directory path          (in config file)
+# COMP              - compset for run              (in config file)
+# RES               - resolution of run            (in config file)
+# STOPN             - how long to run              (in config file)
+# RESUBN            - times to resubmit run        (in config file)
+# STOPVAL           - units for STOPN              (in config file)
+# RESTVAL           - units for RESUBN             (in config file)
+# STATDATE          - start date for run           (in config file)
+# DATMSTARTYR       - start year to loop datm over (in config file)
+# DATMSTOPYR        - end year to loop datm over   (in config file)
+# DATMMODE          - mode for data atm. component (in config file)
+# CLM_USRDAT_DOMAIN - subset domain file           (in config file)
+# CLM_DOMAIN_DIR    - subset domain location       (in config file)
+# CLM_SURFDAT_DIR   - subset surface data location (in config file)
+# CLM_USRDAT_SURDAT - subset surface data file     (in config file)
+# USER_DATM_DIR     - location of datm.streams*    (in config file)
+# WALL_TIME         - wallclock time               (in config file)
+
+
+## Config file name
+if [ $# -eq 0 ]
+  then
+    echo "Enter config file name"
+    read CONF
+  else
+    CONF=$1
+fi
+
+## Parse the config file to get parameters
+source config_parse ${CONF}
+
+## Get CTSM git version - this will go into case name
+cd ${SRCDIR}
+githashctsm=`git log -n 1 --format=%h`
+
+## Get the FATES git version if running fates - this will also go into case name
+if [[ "$FATES" == "1" ]]
+then
+  cd src/fates
+  githashfates=`git log -n 1 --format=%h`
+
+  ## Create case name with ctsm and fates githash
+  case_name=${CASE_DIR}/${TAG}_${githashctsm}_${githashfates}
+else
+  ## Create case name with just ctsm githash
+  case_name=${CASE_DIR}/${TAG}_${githashctsm}
+fi
+
+## Define CIME directory
+base_dir=${SRCDIR}/cime/scripts
+
+## Create the case
+cd ${base_dir}
+./create_newcase --case ${case_name} --res ${RES} --compset ${COMP} --project ${PROJECT} --run-unsupported --mach ${MACH}
+
+cd ${case_name}
+
+## Modify env_mach_pes file
+## Increase to 8 nodes
+./xmlchange NTASKS_ATM=1
+./xmlchange NTASKS_LND=1
+./xmlchange NTASKS_ROF=1
+./xmlchange NTASKS_ICE=1
+./xmlchange NTASKS_OCN=1
+./xmlchange NTASKS_CPL=1
+./xmlchange NTASKS_GLC=1
+./xmlchange NTASKS_WAV=1
+./xmlchange NTASKS_ESP=1
+
+./xmlchange NTHRDS_ATM=1
+./xmlchange NTHRDS_LND=1
+./xmlchange NTHRDS_ROF=1
+./xmlchange NTHRDS_ICE=1
+./xmlchange NTHRDS_OCN=1
+./xmlchange NTHRDS_CPL=1
+./xmlchange NTHRDS_GLC=1
+./xmlchange NTHRDS_WAV=1
+./xmlchange NTHRDS_ESP=1
+
+./xmlchange ROOTPE_ATM=0
+./xmlchange ROOTPE_LND=0
+./xmlchange ROOTPE_ROF=0
+./xmlchange ROOTPE_ICE=0
+./xmlchange ROOTPE_OCN=0
+./xmlchange ROOTPE_CPL=0
+./xmlchange ROOTPE_GLC=0
+./xmlchange ROOTPE_WAV=0
+./xmlchange ROOTPE_ESP=0
+
+## Must do this for single-point runs
+./xmlchange MPILIB=mpi-serial
+
+## Run case-setup
+./case.setup
+
+## Modify env_run parameters - can add more parameters using the config_parse
+## script
+## Note for variables that require quotes you must use the double then single
+## quotes approach for it to work.
+./xmlchange --id STOP_N --val ${STOPN}
+./xmlchange --id RUN_STARTDATE --val $STARTDATE
+./xmlchange --id STOP_OPTION --val ${STOPVAL}
+./xmlchange --id REST_OPTION --val ${RESTVAL}
+./xmlchange --id RESUBMIT --val ${RESUBN}
+./xmlchange --id CLM_FORCE_COLDSTART --val on
+./xmlchange --id JOB_WALLCLOCK_TIME --val ${WALL_TIME}
+./xmlchange --id DATM_CLMNCEP_YR_ALIGN --val ${DATMSTARTYR}
+./xmlchange --id DATM_CLMNCEP_YR_START --val ${DATMSTARTYR}
+./xmlchange --id DATM_CLMNCEP_YR_END --val ${DATMSTOPYR}
+./xmlchange --id DATM_MODE --val ${DATMMODE}
+./xmlchange --id ATM_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
+./xmlchange --id ATM_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
+./xmlchange --id LND_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
+./xmlchange --id LND_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
+./xmlchange --id CLM_USRDAT_NAME --val ${SITE}
+./xmlchange --id MOSART_MODE --val NULL
+
+## Need jobqueue for running on izumi
+if [[ "$MACH" == "izumi" ]]
+then
+  ./xmlchange --id JOB_QUEUE --val verylong
+fi
+
+
+## Update the user_nl_datm file
+cat > user_nl_datm <<EOF
+mapalgo = 'nn','nn','nn','nn','nn'
+EOF
+
+## Update the user_nl_clm file
+## the fsurdat is used for updating the surface dataset file for
+## singlepoint runs
+
+if [[ "$FATES" == "1" ]]
+then
+
+cat > user_nl_clm <<EOF
+fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+hist_fincl1 = 
+'ED_NPATCHES', 'ED_NCOHORTS', 'TRIMMING', 'AREA_PLANT', \
+'AREA_TREES', 'SITE_COLD_STATUS', 'SITE_DROUGHT_STATUS', 'SITE_GDD', \
+'SITE_NCHILLDAYS', 'SITE_NCOLDDAYS', 'SITE_DAYSINCE_COLDLEAFOFF', 'SITE_DAYSINCE_COLDLEAFON', \
+'SITE_DAYSINCE_DROUGHTLEAFOFF', 'SITE_DAYSINCE_DROUGHTLEAFON', 'SITE_MEANLIQVOL_DROUGHTPHEN', 'CANOPY_SPREAD', \
+'PFTbiomass', 'PFTleafbiomass', 'PFTstorebiomass', 'PFTcrownarea', \
+'PFTcanopycrownarea', 'PFTgpp', 'PFTnpp', 'PFTnindivs', \
+'RECRUITMENT', 'MORTALITY', 'PATCH_AREA_BY_AGE', 'LAI_BY_AGE', \
+'CANOPY_AREA_BY_AGE', 'NCL_BY_AGE', 'NPATCH_BY_AGE', 'CANOPY_HEIGHT_DIST', \
+'LEAF_HEIGHT_DIST', 'BIOMASS_BY_AGE', 'SECONDARY_FOREST_FRACTION', 'WOOD_PRODUCT', \
+'SECONDARY_FOREST_BIOMASS', 'SECONDARY_AREA_AGE_ANTHRO_DIST', 'SECONDARY_AREA_PATCH_AGE_DIST', 'FIRE_NESTEROV_INDEX', \
+'FIRE_IGNITIONS', 'FIRE_FDI', 'FIRE_ROS', 'EFFECT_WSPEED', \
+'FIRE_TFC_ROS', 'FIRE_INTENSITY', 'FIRE_INTENSITY_AREA_PRODUCT', 'FIRE_AREA', \
+'FIRE_FUEL_MEF', 'FIRE_FUEL_BULKD', 'FIRE_FUEL_EFF_MOIST', 'FIRE_FUEL_SAV', \
+'SUM_FUEL', 'FRAGMENTATION_SCALER_SL', 'FUEL_MOISTURE_NFSC', 'FUEL_AMOUNT_BY_NFSC', \
+'FUEL_AMOUNT_AGEFUEL', 'AREA_BURNT_BY_PATCH_AGE', 'FIRE_INTENSITY_BY_PATCH_AGE', 'SUM_FUEL_BY_PATCH_AGE', \
+'BURNT_LITTER_FRAC_AREA_PRODUCT', 'LITTER_IN', 'LITTER_OUT', 'SEED_BANK', \
+'SEEDS_IN', 'LITTER_IN_ELEM', 'LITTER_OUT_ELEM', 'SEED_BANK_ELEM', \
+'SEEDS_IN_LOCAL_ELEM', 'SEEDS_IN_EXTERN_ELEM', 'SEED_GERM_ELEM', 'SEED_DECAY_ELEM', \
+'STOREC', 'TOTVEGC', 'SAPWC', 'LEAFC', \
+'FNRTC', 'REPROC', 'CEFFLUX', 'STOREN', \
+'STOREN_TFRAC', 'TOTVEGN', 'SAPWN', 'LEAFN', \
+'FNRTN', 'REPRON', 'NH4UPTAKE', 'NO3UPTAKE', \
+'NEFFLUX', 'NNEED', 'STOREP', 'STOREP_TFRAC', \
+'TOTVEGP', 'SAPWP', 'LEAFP', 'FNRTP', \
+'REPROP', 'PUPTAKE', 'PEFFLUX', 'PNEED', \
+'ED_bdead', 'ED_balive', 'AGB', 'BIOMASS_CANOPY', \
+'BIOMASS_UNDERSTORY', 'PRIMARYLAND_PATCHFUSION_ERROR', 'DISTURBANCE_RATE_P2P', 'DISTURBANCE_RATE_P2S', \
+'DISTURBANCE_RATE_S2S', 'DISTURBANCE_RATE_FIRE', 'DISTURBANCE_RATE_LOGGING', 'DISTURBANCE_RATE_TREEFALL', \
+'DISTURBANCE_RATE_POTENTIAL', 'HARVEST_CARBON_FLUX', 'C_STOMATA', 'C_LBLAYER', \
+'NPP', 'GPP', 'AR', 'GROWTH_RESP', \
+'MAINT_RESP', 'C_STOMATA_BY_AGE', 'C_LBLAYER_BY_AGE', 'NPP_BY_AGE', \
+'GPP_BY_AGE', 'GPP_CANOPY', 'AR_CANOPY', 'GPP_UNDERSTORY', \
+'AR_UNDERSTORY', 'PARSUN_Z_CNLF', 'PARSHA_Z_CNLF', 'PARSUN_Z_CNLFPFT', \
+'PARSHA_Z_CNLFPFT', 'PARSUN_Z_CAN', 'PARSHA_Z_CAN', 'LAISUN_Z_CNLF', \
+'LAISHA_Z_CNLF', 'LAISUN_Z_CNLFPFT', 'LAISHA_Z_CNLFPFT', 'LAISUN_TOP_CAN', \
+'LAISHA_TOP_CAN', 'FABD_SUN_CNLFPFT', 'FABD_SHA_CNLFPFT', 'FABI_SUN_CNLFPFT', \
+'FABI_SHA_CNLFPFT', 'FABD_SUN_CNLF', 'FABD_SHA_CNLF', 'FABI_SUN_CNLF', \
+'FABI_SHA_CNLF', 'PARPROF_DIR_CNLFPFT', 'PARPROF_DIF_CNLFPFT', 'PARPROF_DIR_CNLF', \
+'PARPROF_DIF_CNLF', 'FABD_SUN_TOPLF_BYCANLAYER', 'FABD_SHA_TOPLF_BYCANLAYER', 'FABI_SUN_TOPLF_BYCANLAYER', \
+'FABI_SHA_TOPLF_BYCANLAYER', 'NET_C_UPTAKE_CNLF', 'CROWNAREA_CNLF', 'CROWNAREA_CAN', \
+'DEMOTION_CARBONFLUX', 'PROMOTION_CARBONFLUX', 'MORTALITY_CARBONFLUX_CANOPY', 'MORTALITY_CARBONFLUX_UNDERSTORY', \
+'NPLANT_SCAG', 'NPLANT_CANOPY_SCAG', 'NPLANT_UNDERSTORY_SCAG', 'DDBH_CANOPY_SCAG', \
+'DDBH_UNDERSTORY_SCAG', 'MORTALITY_CANOPY_SCAG', 'MORTALITY_UNDERSTORY_SCAG', 'NPLANT_SCAGPFT', \
+'NPP_AGEPFT', 'BIOMASS_AGEPFT', 'SCORCH_HEIGHT', 'GPP_SCPF', \
+'GPP_CANOPY_SCPF', 'AR_CANOPY_SCPF', 'GPP_UNDERSTORY_SCPF', 'AR_UNDERSTORY_SCPF', \
+'NPP_SCPF', 'NPP_LEAF_SCPF', 'NPP_SEED_SCPF', 'NPP_FNRT_SCPF', \
+'NPP_BGSW_SCPF', 'NPP_BGDW_SCPF', 'NPP_AGSW_SCPF', 'NPP_AGDW_SCPF', \
+'NPP_STOR_SCPF', 'DDBH_SCPF', 'GROWTHFLUX_SCPF', 'GROWTHFLUX_FUSION_SCPF', \
+'DDBH_CANOPY_SCPF', 'DDBH_UNDERSTORY_SCPF', 'BA_SCPF', 'AGB_SCPF', \
+'NPLANT_SCPF', 'NPLANT_CAPF', 'M1_SCPF', 'M2_SCPF', \
+'M3_SCPF', 'M4_SCPF', 'M5_SCPF', 'CROWNFIREMORT_SCPF', \
+'CAMBIALFIREMORT_SCPF', 'M6_SCPF', 'M7_SCPF', 'M8_SCPF', \
+'M9_SCPF', 'M10_SCPF', 'M10_CAPF', 'MORTALITY_CANOPY_SCPF', \
+'C13disc_SCPF', 'BSTOR_CANOPY_SCPF', 'BLEAF_CANOPY_SCPF', 'NPLANT_CANOPY_SCPF', \
+'MORTALITY_UNDERSTORY_SCPF', 'BSTOR_UNDERSTORY_SCPF', 'BLEAF_UNDERSTORY_SCPF', 'NPLANT_UNDERSTORY_SCPF', \
+'CWD_AG_CWDSC', 'CWD_BG_CWDSC', 'CWD_AG_IN_CWDSC', 'CWD_BG_IN_CWDSC', \
+'CWD_AG_OUT_CWDSC', 'CWD_BG_OUT_CWDSC', 'AR_SCPF', 'AR_GROW_SCPF', \
+'AR_MAINT_SCPF', 'AR_DARKM_SCPF', 'AR_AGSAPM_SCPF', 'AR_CROOTM_SCPF', \
+'AR_FROOTM_SCPF', 'DDBH_CANOPY_SCLS', 'DDBH_UNDERSTORY_SCLS', 'YESTERDAYCANLEV_CANOPY_SCLS', \
+'YESTERDAYCANLEV_UNDERSTORY_SCLS', 'BA_SCLS', 'AGB_SCLS', 'BIOMASS_SCLS', \
+'DEMOTION_RATE_SCLS', 'PROMOTION_RATE_SCLS', 'NPLANT_CANOPY_SCLS', 'LAI_CANOPY_SCLS', \
+'SAI_CANOPY_SCLS', 'MORTALITY_CANOPY_SCLS', 'NPLANT_UNDERSTORY_SCLS', 'LAI_UNDERSTORY_SCLS', \
+'SAI_UNDERSTORY_SCLS', 'NPLANT_SCLS', 'NPLANT_CACLS', 'M1_SCLS', \
+'M2_SCLS', 'M3_SCLS', 'M4_SCLS', 'M5_SCLS', \
+'M6_SCLS', 'M7_SCLS', 'M8_SCLS', 'M9_SCLS', \
+'M10_SCLS', 'M10_CACLS', 'CARBON_BALANCE_CANOPY_SCLS', 'CARBON_BALANCE_UNDERSTORY_SCLS', \
+'MORTALITY_UNDERSTORY_SCLS', 'TRIMMING_CANOPY_SCLS', 'TRIMMING_UNDERSTORY_SCLS', 'CROWN_AREA_CANOPY_SCLS', \
+'CROWN_AREA_UNDERSTORY_SCLS', 'LEAF_MD_CANOPY_SCLS', 'ROOT_MD_CANOPY_SCLS', 'BSTORE_MD_CANOPY_SCLS', \
+'BDEAD_MD_CANOPY_SCLS', 'BSW_MD_CANOPY_SCLS', 'SEED_PROD_CANOPY_SCLS', 'NPP_LEAF_CANOPY_SCLS', \
+'NPP_FROOT_CANOPY_SCLS', 'NPP_BSW_CANOPY_SCLS', 'NPP_BDEAD_CANOPY_SCLS', 'NPP_BSEED_CANOPY_SCLS', \
+'NPP_STORE_CANOPY_SCLS', 'LEAF_MR', 'FROOT_MR', 'LIVECROOT_MR', \
+'LIVESTEM_MR', 'RDARK_CANOPY_SCLS', 'LIVESTEM_MR_CANOPY_SCLS', 'LIVECROOT_MR_CANOPY_SCLS', \
+'FROOT_MR_CANOPY_SCLS', 'RESP_G_CANOPY_SCLS', 'RESP_M_CANOPY_SCLS', 'LEAF_MD_UNDERSTORY_SCLS', \
+'ROOT_MD_UNDERSTORY_SCLS', 'BSTORE_MD_UNDERSTORY_SCLS', 'BDEAD_MD_UNDERSTORY_SCLS', 'BSW_MD_UNDERSTORY_SCLS', \
+'SEED_PROD_UNDERSTORY_SCLS', 'NPP_LEAF_UNDERSTORY_SCLS', 'NPP_FROOT_UNDERSTORY_SCLS', 'NPP_BSW_UNDERSTORY_SCLS', \
+'NPP_BDEAD_UNDERSTORY_SCLS', 'NPP_BSEED_UNDERSTORY_SCLS', 'NPP_STORE_UNDERSTORY_SCLS', 'RDARK_UNDERSTORY_SCLS', \
+'LIVESTEM_MR_UNDERSTORY_SCLS', 'LIVECROOT_MR_UNDERSTORY_SCLS', 'FROOT_MR_UNDERSTORY_SCLS', 'RESP_G_UNDERSTORY_SCLS', \
+'RESP_M_UNDERSTORY_SCLS', 'NEP', 'FATES_HR', 'Fire_Closs', \
+'FIRE_FLUX', 'CBALANCE_ERROR_FATES', 'ERROR_FATES', 'LITTER_FINES_AG_ELEM', \
+'LITTER_FINES_BG_ELEM', 'LITTER_CWD_BG_ELEM', 'LITTER_CWD_AG_ELEM', 'LITTER_CWD', \
+'TOTVEGC_SCPF', 'LEAFC_SCPF', 'FNRTC_SCPF', 'SAPWC_SCPF', \
+'STOREC_SCPF', 'REPROC_SCPF', 'CEFFLUX_SCPF', 'TOTVEGN_SCPF', \
+'LEAFN_SCPF', 'FNRTN_SCPF', 'SAPWN_SCPF', 'STOREN_SCPF', \
+'STOREN_TFRAC_CANOPY_SCPF', 'STOREN_TFRAC_UNDERSTORY_SCPF', 'REPRON_SCPF', 'NH4UPTAKE_SCPF', \
+'NO3UPTAKE_SCPF', 'NEFFLUX_SCPF', 'NNEED_SCPF', 'TOTVEGP_SCPF', \
+'LEAFP_SCPF', 'FNRTP_SCPF', 'SAPWP_SCPF', 'STOREP_SCPF', \
+'STOREP_TFRAC_CANOPY_SCPF', 'STOREP_TFRAC_UNDERSTORY_SCPF', 'REPROP_SCPF', 'PUPTAKE_SCPF', \
+'PEFFLUX_SCPF', 'PNEED_SCPF', 'NPP_LEAF', 'NPP_SEED', \
+'NPP_STEM', 'NPP_FROOT', 'NPP_CROOT', 'NPP_STOR', \
+'FATES_ERRH2O_SCPF', 'FATES_TRAN_SCPF', 'FATES_SAPFLOW_SCPF', 'FATES_SAPFLOW_SI', \
+'FATES_ITERH1_SCPF', 'FATES_ITERH2_SCPF', 'FATES_ATH_SCPF', 'FATES_TTH_SCPF', \
+'FATES_STH_SCPF', 'FATES_LTH_SCPF', 'FATES_AWP_SCPF', 'FATES_TWP_SCPF', \
+'FATES_SWP_SCPF', 'FATES_LWP_SCPF', 'FATES_AFLC_SCPF', 'FATES_TFLC_SCPF', \
+'FATES_SFLC_SCPF', 'FATES_LFLC_SCPF', 'FATES_BTRAN_SCPF', 'FATES_ROOTWGT_SOILVWC_SI', \
+'FATES_ROOTWGT_SOILVWCSAT_SI', 'FATES_ROOTWGT_SOILMATPOT_SI', 'FATES_SOILMATPOT_SL', 'FATES_SOILVWC_SL', \
+'FATES_SOILVWCSAT_SL', 'FATES_ROOTUPTAKE_SI', 'FATES_ROOTUPTAKE_SL', 'FATES_ROOTUPTAKE0_SCPF', \
+'FATES_ROOTUPTAKE10_SCPF', 'FATES_ROOTUPTAKE50_SCPF', 'FATES_ROOTUPTAKE100_SCPF', 'H2OVEG', \
+'H2OVEG_DEAD', 'H2OVEG_RECRUIT', 'H2OVEG_GROWTURN_ERR', 'H2OVEG_HYDRO_ERR'
+
+use_fates=.true.
+fates_parteh_mode=2
+fates_spitfire_mode=0
+EOF
+
+else
+cat > user_nl_clm <<EOF
+fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
+EOF
+
+fi
+
+## Copy the user_datm.streams* files
+cp ${USER_DATM_DIR}/user_datm* .
+
+
+## Build the case
+./case.build
