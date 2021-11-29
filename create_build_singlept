@@ -46,7 +46,13 @@
 
 
 ## Config file name
-CONF=$1
+if [ $# -eq 0 ]
+  then
+    echo "Enter config file name"
+    read CONF
+  else
+    CONF=$1
+fi
 
 ## Parse the config file to get parameters
 source config_parse ${CONF}
@@ -79,16 +85,38 @@ cd ${case_name}
 
 ## Modify env_mach_pes file
 ## Increase to 8 nodes
-./xmlchange NTASKS_ATM=-1
-./xmlchange NTASKS_LND=-15
-./xmlchange NTASKS_ROF=-15
-./xmlchange NTASKS_ICE=-15
-./xmlchange NTASKS_OCN=-15
-./xmlchange NTASKS_CPL=-15
-./xmlchange NTASKS_GLC=-15
-./xmlchange NTASKS_WAV=-15
-./xmlchange NTASKS_ESP=-15
+./xmlchange NTASKS_ATM=1
+./xmlchange NTASKS_LND=1
+./xmlchange NTASKS_ROF=1
+./xmlchange NTASKS_ICE=1
+./xmlchange NTASKS_OCN=1
+./xmlchange NTASKS_CPL=1
+./xmlchange NTASKS_GLC=1
+./xmlchange NTASKS_WAV=1
+./xmlchange NTASKS_ESP=1
 
+./xmlchange NTHRDS_ATM=1
+./xmlchange NTHRDS_LND=1
+./xmlchange NTHRDS_ROF=1
+./xmlchange NTHRDS_ICE=1
+./xmlchange NTHRDS_OCN=1
+./xmlchange NTHRDS_CPL=1
+./xmlchange NTHRDS_GLC=1
+./xmlchange NTHRDS_WAV=1
+./xmlchange NTHRDS_ESP=1
+
+./xmlchange ROOTPE_ATM=0
+./xmlchange ROOTPE_LND=0
+./xmlchange ROOTPE_ROF=0
+./xmlchange ROOTPE_ICE=0
+./xmlchange ROOTPE_OCN=0
+./xmlchange ROOTPE_CPL=0
+./xmlchange ROOTPE_GLC=0
+./xmlchange ROOTPE_WAV=0
+./xmlchange ROOTPE_ESP=0
+
+## Must do this for single-point runs
+./xmlchange MPILIB=mpi-serial
 
 ## Run case-setup
 ./case.setup
@@ -108,38 +136,33 @@ cd ${case_name}
 ./xmlchange --id DATM_CLMNCEP_YR_START --val ${DATMSTARTYR}
 ./xmlchange --id DATM_CLMNCEP_YR_END --val ${DATMSTOPYR}
 ./xmlchange --id DATM_MODE --val ${DATMMODE}
-./xmlchange --id ATM_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
-./xmlchange --id ATM_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
 ./xmlchange --id LND_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
 ./xmlchange --id LND_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
-./xmlchange --id RTM_MODE --val NULL
+./xmlchange --id ATM_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
+./xmlchange --id ATM_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
+./xmlchange --id MOSART_MODE --val NULL
 
-## Jobqueue
+## Need jobqueue for running on izumi
 if [[ "$MACH" == "izumi" ]]
 then
   ./xmlchange --id JOB_QUEUE --val verylong
-else
-  ./xmlchange --id JOB_QUEUE --val economy
 fi
 
 
+## Update the user_nl_datm file
+cat > user_nl_datm <<EOF
+mapalgo = 'nn','nn','nn','nn','nn'
+EOF
+
 ## Update the user_nl_clm file
 ## the fsurdat is used for updating the surface dataset file for
-## regional runs
+## singlepoint runs
 
 if [[ "$FATES" == "1" ]]
 then
 
 cat > user_nl_clm <<EOF
 fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
-fates_paramfile = '${PARAM_DIR}/${PARAM_FILE}'
-hist_fincl1 =
-'M1_SCPF','M2_SCPF','M3_SCPF','M4_SCPF','M5_SCPF','M6_SCPF','M7_SCPF','M8_SCPF','M9_SCPF',\
-'MORTALITY_CANOPY_SCPF','MORTALITY_UNDERSTORY_SCPF',\
-'PFTcrownarea','DDBH_CANOPY_SCPF','DDBH_UNDERSTORY_SCPF','NPLANT_CANOPY_SCPF','NPLANT_UNDERSTORY_SCPF',\
-'BSTOR_CANOPY_SCPF','BSTOR_UNDERSTORY_SCPF','CWD_AG_CWDSC',\
-'NPLANT_SCAG','NPLANT_SCAGPFT','NPLANT_SCPF','DDBH_SCPF','BA_SCPF','RECRUITMENT'
-
 use_fates=.true.
 fates_parteh_mode=1
 fates_spitfire_mode=0
@@ -152,6 +175,6 @@ EOF
 
 fi
 
-
 ## Build the case
-##./case.build
+./case.build
+./case.submit

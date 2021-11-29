@@ -46,13 +46,7 @@
 
 
 ## Config file name
-if [ $# -eq 0 ]
-  then
-    echo "Enter config file name"
-    read CONF
-  else
-    CONF=$1
-fi
+CONF=$1
 
 ## Parse the config file to get parameters
 source config_parse ${CONF}
@@ -85,38 +79,16 @@ cd ${case_name}
 
 ## Modify env_mach_pes file
 ## Increase to 8 nodes
-./xmlchange NTASKS_ATM=1
-./xmlchange NTASKS_LND=1
-./xmlchange NTASKS_ROF=1
-./xmlchange NTASKS_ICE=1
-./xmlchange NTASKS_OCN=1
-./xmlchange NTASKS_CPL=1
-./xmlchange NTASKS_GLC=1
-./xmlchange NTASKS_WAV=1
-./xmlchange NTASKS_ESP=1
+./xmlchange NTASKS_ATM=-1
+./xmlchange NTASKS_LND=-8
+./xmlchange NTASKS_ROF=-8
+./xmlchange NTASKS_ICE=-8
+./xmlchange NTASKS_OCN=-8
+./xmlchange NTASKS_CPL=-8
+./xmlchange NTASKS_GLC=-8
+./xmlchange NTASKS_WAV=-8
+./xmlchange NTASKS_ESP=-8
 
-./xmlchange NTHRDS_ATM=1
-./xmlchange NTHRDS_LND=1
-./xmlchange NTHRDS_ROF=1
-./xmlchange NTHRDS_ICE=1
-./xmlchange NTHRDS_OCN=1
-./xmlchange NTHRDS_CPL=1
-./xmlchange NTHRDS_GLC=1
-./xmlchange NTHRDS_WAV=1
-./xmlchange NTHRDS_ESP=1
-
-./xmlchange ROOTPE_ATM=0
-./xmlchange ROOTPE_LND=0
-./xmlchange ROOTPE_ROF=0
-./xmlchange ROOTPE_ICE=0
-./xmlchange ROOTPE_OCN=0
-./xmlchange ROOTPE_CPL=0
-./xmlchange ROOTPE_GLC=0
-./xmlchange ROOTPE_WAV=0
-./xmlchange ROOTPE_ESP=0
-
-## Must do this for single-point runs
-./xmlchange MPILIB=mpi-serial
 
 ## Run case-setup
 ./case.setup
@@ -140,31 +112,28 @@ cd ${case_name}
 ./xmlchange --id ATM_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
 ./xmlchange --id LND_DOMAIN_FILE --val ${CLM_USRDAT_DOMAIN}
 ./xmlchange --id LND_DOMAIN_PATH --val ${CLM_DOMAIN_DIR}
-./xmlchange --id CLM_USRDAT_NAME --val ${SITE}
-./xmlchange --id MOSART_MODE --val NULL
+./xmlchange --id RTM_MODE --val NULL
 
-## Need jobqueue for running on izumi
+## Jobqueue
 if [[ "$MACH" == "izumi" ]]
 then
   ./xmlchange --id JOB_QUEUE --val verylong
+else
+  ./xmlchange --id JOB_QUEUE --val economy
 fi
 
 
-## Update the user_nl_datm file
-cat > user_nl_datm <<EOF
-mapalgo = 'nn','nn','nn','nn','nn'
-EOF
-
 ## Update the user_nl_clm file
 ## the fsurdat is used for updating the surface dataset file for
-## singlepoint runs
+## regional runs
 
 if [[ "$FATES" == "1" ]]
 then
 
 cat > user_nl_clm <<EOF
 fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
-hist_fincl1 = 
+
+hist_fincl1 =
 'FATES_NPATCHES', 'FATES_NCOHORTS', 'FATES_TRIMMING', 'FATES_AREA_PLANTS', \
 'FATES_AREA_TREES', 'FATES_COLD_STATUS', 'FATES_DROUGHT_STATUS', 'FATES_GDD', \
 'FATES_NCHILLDAYS', 'FATES_NCOLDDAYS', 'FATES_DAYSINCE_COLDLEAFOFF', 'FATES_DAYSINCE_COLDLEAFON', \
@@ -253,16 +222,8 @@ hist_fincl1 =
 'FATES_LEAFP_SZPF', 'FATES_FROOTP_SZPF', 'FATES_SAPWOODP_SZPF', 'FATES_STOREP_SZPF', \
 'FATES_STOREP_TF_CANOPY_SZPF', 'FATES_STOREP_TF_USTORY_SZPF', 'FATES_REPROP_SZPF', 'FATES_PUPTAKE_SZPF', \
 'FATES_PEFFLUX_SZPF', 'FATES_PNEED_SZPF', 'FATES_LEAF_ALLOC', 'FATES_SEED_ALLOC', \
-'FATES_STEM_ALLOC', 'FATES_FROOT_ALLOC', 'FATES_CROOT_ALLOC', 'FATES_STORE_ALLOC', \
-'FATES_ERRH2O_SZPF', 'FATES_TRAN_SZPF', 'FATES_SAPFLOW_SZPF', 'FATES_SAPFLOW', \
-'FATES_ITERH1_SZPF', 'FATES_ITERH2_SZPF', 'FATES_ROOTH2O_ABS_SZPF', 'FATES_ROOTH2O_TRANS_SZPF', \
-'FATES_STEMH2O_SZPF', 'FATES_LEAFH2O_SZPF', 'FATES_ROOTH2O_POT_SZPF', 'FATES_ROOTH2O_TRANSPOT_SZPF', \
-'FATES_STEMH2O_POT_SZPF', 'FATES_LEAFH2O_POT_SZPF', 'FATES_ROOT_ABSFRAC_SZPF', 'FATES_ROOT_TRANSFRAC_SZPF', \
-'FATES_STEMH2O_FRAC_SZPF', 'FATES_LEAFH2O_FRAC_SZPF', 'FATES_BTRAN_SZPF', 'FATES_ROOTWGT_SOILVWC', \
-'FATES_ROOTWGT_SOILVWCSAT', 'FATES_ROOTWGT_SOILMATPOT', 'FATES_SOILMATPOT_SL', 'FATES_SOILVWC_SL', \
-'FATES_SOILVWCSAT_SL', 'FATES_ROOTUPTAKE', 'FATES_ROOTUPTAKE_SL', 'FATES_ROOTUPTAKE0_SZPF', \
-'FATES_ROOTUPTAKE10_SZPF', 'FATES_ROOTUPTAKE50_SZPF', 'FATES_ROOTUPTAKE100_SZPF', 'FATES_VEGH2O', \
-'FATES_VEGH2O_DEAD', 'FATES_VEGH2O_RECRUIT', 'FATES_VEGH2O_GROWTURN_ERR', 'FATES_VEGH2O_HYDRO_ERR'
+'FATES_STEM_ALLOC', 'FATES_FROOT_ALLOC', 'FATES_CROOT_ALLOC', 'FATES_STORE_ALLOC'
+
 
 use_fates=.true.
 fates_parteh_mode=2
@@ -275,9 +236,6 @@ fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
 EOF
 
 fi
-
-## Copy the user_datm.streams* files
-cp ${USER_DATM_DIR}/user_datm* .
 
 
 ## Build the case
