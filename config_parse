@@ -25,6 +25,7 @@
 # PARAM_FILE        - FATES parameter file
 # PARAM_DIR         - FATES param file location
 # CASE_DIR          - case directory path
+# USER_MODS         - user mods direcotry path
 # COMP              - compset for run
 # RES               - resolution of run
 # STOPN             - how long to run
@@ -35,11 +36,6 @@
 # DATMSTARTYR       - start year to loop datm over
 # DATMSTOPYR        - end year to loop datm over
 # DATMMODE          - mode for data atm. component
-# CLM_USRDAT_DOMAIN - subset domain file
-# CLM_DOMAIN_DIR    - subset domain location
-# CLM_SURFDAT_DIR   - subset surface data location
-# CLM_USRDAT_SURDAT - subset surface data file
-# USER_DATM_DIR     - location of datm.streams*
 # WALL_TIME         - wallclock time
 
 ## Config file name
@@ -58,6 +54,7 @@ config=(
     [PARAM_FILE]=""
     [PARAM_DIR]=""
     [CASE_DIR]=""
+    [USER_MODS]=""
     [COMP]=""
     [RES]=""
     [STOPN]=""
@@ -68,11 +65,6 @@ config=(
     [DATMSTARTYR]=""
     [DATMSTOPYR]=""
     [DATMMODE]=""
-    [CLM_USRDAT_DOMAIN]=""
-    [CLM_DOMAIN_DIR]=""
-    [CLM_SURFDAT_DIR]=""
-    [CLM_USRDAT_SURDAT]=""
-    [USER_DATM_DIR]=""
     [WALL_TIME]=""
 )
 
@@ -96,6 +88,7 @@ FATES=${config[FATES]}
 PARAM_FILE=${config[PARAM_FILE]}
 PARAM_DIR=${config[PARAM_DIR]}
 CASE_DIR=${config[CASE_DIR]}
+USER_MODS=${config[USER_MODS]}
 COMP=${config[COMP]}
 RES=${config[RES]}
 STOPN=${config[STOPN]}
@@ -106,9 +99,5 @@ STARTDATE=${config[STARTDATE]}
 DATMSTARTYR=${config[DATMSTARTYR]}
 DATMSTOPYR=${config[DATMSTOPYR]}
 DATMMODE=${config[DATMMODE]}
-CLM_USRDAT_DOMAIN=${config[CLM_USRDAT_DOMAIN]}
-CLM_DOMAIN_DIR=${config[CLM_DOMAIN_DIR]}
-CLM_SURFDAT_DIR=${config[CLM_SURFDAT_DIR]}
-CLM_USRDAT_SURDAT=${config[CLM_USRDAT_SURDAT]}
-USER_DATM_DIR=${config[USER_DATM_DIR]}
 WALL_TIME=${config[WALL_TIME]}
+
