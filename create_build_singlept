@@ -106,10 +106,6 @@ then
   ./xmlchange --id JOB_QUEUE --val verylong
 fi
 
-## Update the user_nl_clm file
-## the fsurdat is used for updating the surface dataset file for
-## singlepoint runs
-
 ## Build and submit the case
 #./case.build
 #./case.submit

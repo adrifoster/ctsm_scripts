@@ -130,7 +130,7 @@ fi
 if [[ "$FATES" == "1" ]]
 then
 
-cat > user_nl_clm <<EOF
+cat >> user_nl_clm <<EOF
 fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
 fates_paramfile = '${PARAM_DIR}/${PARAM_FILE}'
 hist_fincl1 =
@@ -146,7 +146,7 @@ fates_spitfire_mode=0
 EOF
 
 else
-cat > user_nl_clm <<EOF
+cat >> user_nl_clm <<EOF
 fsurdat = '${CLM_SURFDAT_DIR}/${CLM_USRDAT_SURDAT}'
 EOF
 
