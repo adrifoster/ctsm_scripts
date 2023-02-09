@@ -26,8 +26,8 @@ def modify_fates_params(default_file, out_dir, tag, src_dir, param_file):
     command = f"cp {default_file} {out_file}"
     os.system(command)
 
-    # parmaeters to modify
-    params = param_file.columns[2:].values
+    # parameters to modify
+    params = param_file.columns[3:].values
 
     # Modify all other params
     for parm in params:
@@ -37,17 +37,21 @@ def modify_fates_params(default_file, out_dir, tag, src_dir, param_file):
             change_value(src_dir=src_dir, out_file=out_file, var=str(parm), val=str(val),
                          pft=str(pft))
 
+
 if __name__ == "__main__":
     CODE_DIR = "/Users/afoster/Documents/ctsm/ctsm_fates/src/fates"
-    OUTPUT_DIR = "/Users/afoster/Documents/ctsm/fates/NEON/parameter_files"
 
-    SITE = "BONA"
-
-    file_tag = f"{SITE}_noagb"
-    infile = f"/Users/afoster/Documents/ctsm/fates/NEON/parameter_files/fates_{SITE.lower()}_params_noagb.csv"
-    default_file = f"/Users/afoster/Documents/ctsm/fates/NEON/parameter_files/param_file_{SITE}_oob.nc"
+    OUTPUT_DIR = "/Users/afoster/Documents/ctsm/fates/NEON/parameter_files/BONA_noagb"
+    FILE_TAG = "BONA_sample"
+    INFILE = "/Users/afoster/Documents/ctsm/fates/NEON/parameter_files/fates_bona_params_sample_noagb.csv"
+    DEFAULT_FILE = "/Users/afoster/Documents/ctsm/fates/NEON/parameter_files/param_file_BONA_oob.nc"
 
     # Generate the new parameter file
-    param_dat = pd.read_csv(infile)
-    modify_fates_params(default_file=default_file, out_dir=OUTPUT_DIR, tag=file_tag,
-                        src_dir=CODE_DIR, param_file=param_dat)
+    param_dat = pd.read_csv(INFILE)
+    samps = param_dat['ind'].unique()
+
+    for samp in samps:
+        param_sample = param_dat[param_dat['ind'] == samp]
+        file_name = f"{FILE_TAG}_{samp}"
+        modify_fates_params(default_file=DEFAULT_FILE, out_dir=OUTPUT_DIR, tag=file_name,
+                            src_dir=CODE_DIR, param_file=param_sample)
