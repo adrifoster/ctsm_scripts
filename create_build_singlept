@@ -75,36 +75,14 @@ base_dir=${SRCDIR}/cime/scripts
 
 ## Create the case
 cd ${base_dir}
-./create_newcase --case ${case_name} --res ${RES} --compset ${COMP} --project ${PROJECT} --run-unsupported --mach ${MACH} --user-mods-dir ${USER_MODS}
+./create_newcase --case ${case_name} --res ${RES} --compset ${COMP} --project ${PROJECT} --run-unsupported --user-mods-dir ${USER_MODS}
 
 cd ${case_name}
 
 ## Run case-setup
 ./case.setup
 
-## Modify env_run parameters - can add more parameters using the config_parse
-## script
-## Note for variables that require quotes you must use the double then single
-## quotes approach for it to work.
-./xmlchange --id STOP_N --val ${STOPN}
-./xmlchange --id RUN_STARTDATE --val $STARTDATE
-./xmlchange --id STOP_OPTION --val ${STOPVAL}
-./xmlchange --id REST_OPTION --val ${RESTVAL}
-./xmlchange --id RESUBMIT --val ${RESUBN}
 ./xmlchange --id CLM_FORCE_COLDSTART --val on
-./xmlchange --id JOB_WALLCLOCK_TIME --val ${WALL_TIME}
-./xmlchange --id DATM_YR_ALIGN --val ${DATMSTARTYR}
-./xmlchange --id DATM_YR_START --val ${DATMSTARTYR}
-./xmlchange --id DATM_YR_END --val ${DATMSTOPYR}
-./xmlchange --id DATM_MODE --val ${DATMMODE}
-./xmlchange --id CLM_USRDAT_NAME --val ${SITE}
-
-
-## Need jobqueue for running on izumi
-if [[ "$MACH" == "izumi" ]]
-then
-  ./xmlchange --id JOB_QUEUE --val verylong
-fi
 
 ## Build and submit the case
 #./case.build
