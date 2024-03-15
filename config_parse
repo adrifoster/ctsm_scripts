@@ -72,7 +72,7 @@ do
     if echo $line | grep -F = &>/dev/null
     then
         varname=$(echo "$line" | cut -d '=' -f 1)
-        config[$varname]=$(echo "$line" | cut -d '=' -f 2-)
+        config[$varname]=$(echo "$line" | cut -d '=' -f 2- | envsubst)
     fi
 done < $conf
 
