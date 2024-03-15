@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+#
+# #########################
+# Purpose: Create and build a case from a config file
+# Author: Adrianna C. Foster
+# Date: September, 2023
+# #########################
+# #########################
+
+## Config file name
+if [ $# -eq 0 ]
+  then
+    echo "Must enter config file!"
+    exit
+  else
+    CONF=$1
+fi
+
+## Parse the config file to get parameters
+source config_parse /glade/work/afoster/test_cases/${CONF}.config
+
+## Create case name 
+case_path=${CASE_DIR}/${CASE_NAME}
+
+## remove old directories if they exist
+#if [ -d ${case_path} ]; then rm -r ${case_path}; fi
+#if [ -d ${OUTDIR}/${case_path} ]; then rm -r ${OUTDIR}/${case_path}; fi
+
+## Create the case
+cd ${SRCDIR}/cime/scripts
+./create_newcase --case ${case_path} --res ${RES} --compset ${COMPSET} --run-unsupported --user-mods-dir ${USER_MODS} --project P93300041 --output-root ${OUTDIR}
+
+cd ${case_path}
+
+## set up case
+./case.setup
+
+# need to set debug to true for GDB
+./xmlchange DEBUG=True
+

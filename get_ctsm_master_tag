@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+#
+# #########################
+# Purpose: Query the CTSM master branch to get the master tag
+# Author: Adrianna C. Foster
+# Date: February, 2024
+# #########################
+# #########################
+
+# local master repo as input argument
+if [ $# -eq 0 ]
+  then
+    echo "Must enter path to CTSM local repo"
+    exit
+  else
+    CTSM_REPO=$1
+fi
+
+cd ${CTSM_REPO}
+
+# fetch origin, checkout master, update
+git fetch origin
+git checkout master
+git pull
+
+git describe

@@ -20,22 +20,10 @@
 # PROJECT           - project code
 # SRCDIR            - CTSM source code directory
 # TAG               - name of case
-# FATES             - use fates or not
-# PARAM_FILE        - FATES parameter file
-# PARAM_DIR         - FATES param file location
 # CASE_DIR          - case directory path
 # USER_MODS         - user mods direcotry path
 # COMP              - compset for run
 # RES               - resolution of run
-# STOPN             - how long to run
-# RESUBN            - times to resubmit run
-# STOPVAL           - units for STOPN
-# RESTVAL           - units for RESUBN
-# STATDATE          - start date for run
-# DATMSTARTYR       - start year to loop datm over
-# DATMSTOPYR        - end year to loop datm over
-# DATMMODE          - mode for data atm. component
-# WALL_TIME         - wallclock time
 
 ## Config file name
 conf=$1
@@ -45,25 +33,13 @@ conf=$1
 typeset -A config
 config=(
     [MACH]=""
-    [PROJECT]=""
     [SRCDIR]=""
-    [TAG]=""
-    [FATES]=""
-    [PARAM_FILE]=""
-    [PARAM_DIR]=""
+    [CASE_NAME]=""
     [CASE_DIR]=""
     [USER_MODS]=""
-    [COMP]=""
+    [COMPSET]=""
     [RES]=""
-    [STOPN]=""
-    [RESUBN]=""
-    [STOPVAL]=""
-    [RESTVAL]=""
-    [STARTDATE]=""
-    [DATMSTARTYR]=""
-    [DATMSTOPYR]=""
-    [DATMMODE]=""
-    [WALL_TIME]=""
+    [OUTDIR]=""
 )
 
 ## Parse config file
@@ -78,23 +54,11 @@ done < $conf
 
 ## Create variables - add more parameters here
 MACH=${config[MACH]}
-PROJECT=${config[PROJECT]}
 SRCDIR=${config[SRCDIR]}
-TAG=${config[TAG]}
-FATES=${config[FATES]}
-PARAM_FILE=${config[PARAM_FILE]}
-PARAM_DIR=${config[PARAM_DIR]}
+CASE_NAME=${config[CASE_NAME]}
 CASE_DIR=${config[CASE_DIR]}
 USER_MODS=${config[USER_MODS]}
-COMP=${config[COMP]}
+COMPSET=${config[COMPSET]}
 RES=${config[RES]}
-STOPN=${config[STOPN]}
-RESUBN=${config[RESUBN]}
-STOPVAL=${config[STOPVAL]}
-RESTVAL=${config[RESTVAL]}
-STARTDATE=${config[STARTDATE]}
-DATMSTARTYR=${config[DATMSTARTYR]}
-DATMSTOPYR=${config[DATMSTOPYR]}
-DATMMODE=${config[DATMMODE]}
-WALL_TIME=${config[WALL_TIME]}
+OUTDIR=${config[OUTDIR]}
 
